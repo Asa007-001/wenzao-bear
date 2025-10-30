@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>文藻熊問答遊戲</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #cce7ff;
+      margin: 0;
+      padding: 20px;
+      position: relative;
+      text-align: center;
+    }
+
+    h1 {
+      color: #6a1b9a;
+      margin-bottom: 20px;
+      font-size: 36px;
+    }
+
+    /* 分數右上角 */
+    #score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      background-color: rgba(255,255,255,0.6);
+      padding: 8px 15px;
+      border-radius: 8px;
+    }
+
+    /* 音樂按鈕 */
+    #music-controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    #music-controls img {
+      width: 50px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: transform 0.3s;
+    }
+    #music-controls img:hover { transform: scale(1.2); }
+
+    /* 左右圖片 */
+.image-side {
+  width: 700px;   /* 放大圖片寬度 */
+  height: 700px;  /* 放大圖片高度 */
+  object-fit: contain;
+  transform: rotate(-5deg);
+  transition: transform 0.3s;
+}
+.image-side.right { transform: rotate(5deg); }
+
+/* 遊戲容器 */
+#game-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 100px;
+  padding: 0 40px;  /* 靠近邊界 */
+}
+
+
+    /* 題目與選項 */
+    #question-container {
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #question {
+      font-size: 40px;
+      margin-bottom: 25px;
+    }
+
+    #answers {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+    }
+
+    .answer-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+    }
+    .answer-btn:hover { background-color: #45a049; }
+
+    /* 結束按鈕 */
+    .end-buttons {
+      display: none;
+      margin-top: 20px;
+      gap: 20px;
+    }
+    .end-buttons button {
+      padding: 10px 25px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      background-color: #ff9800;
+      color: white;
+    }
+    .end-buttons button:hover { background-color: #fb8c00; }
+  </style>
+</head>
+<body>
+  <h1>🐻 文藻熊問答遊戲</h1>
+  <div id="score">分數: 0</div>
+
+  <!-- 音樂按鈕 -->
+  <div id="music-controls">
+    <img id="playBtn" src="images/Copilot_20251030_175625.png" alt="播放音樂">
+    <img id="pauseBtn" src="images/Copilot_20251030_180030.png" alt="暫停音樂">
+  </div>
+
+  <div id="game-container">
+    <img id="leftImage" class="image-side" src="images/未命名設計.png" alt="左圖">
+
+    <div id="question-container">
+      <div id="question">題目會出現在這裡</div>
+      <div id="answers">
+        <button class="answer-btn" id="btn0">選項1</button>
+        <button class="answer-btn" id="btn1">選項2</button>
+        <button class="answer-btn" id="btn2">選項3</button>
+        <button class="answer-btn" id="btn3">選項4</button>
+      </div>
+
+      <div class="end-buttons" id="endButtons">
+        <button id="restartBtn">重玩</button>
+        <button id="exitBtn">結束</button>
+      </div>
+    </div>
+
+    <img id="rightImage" class="image-side right" src="images/未命名設計 copy.png" alt="右圖">
+  </div>
+
+  <audio id="bgMusic" autoplay loop>
+    <source src="溫馨.mp3" type="audio/mpeg">
+    您的瀏覽器不支援音樂播放
+  </audio>
+
+  <script>
+    const questions = [
+      { question: "文藻熊是誰設計的？", answers: ["學校老師","德文科校友曾文衍","日本設計師","學生會"], correct: 1, leftImg: "images/未命名設計.png", rightImg: "images/未命名設計 copy.png" },
+      { question: "文藻熊的袖口上繡了什麼字？", answers: ["Servant","Service","Serviam","Spirit"], correct: 2, leftImg: "images/未命名設計.png", rightImg: "images/未命名設計 copy.png" },
+      { question: "文藻熊最初的用途是什麼？", answers: ["校慶禮物","義賣商品","活動吉祥物","校刊封面"], correct: 0, leftImg: "images/未命名設計.png", rightImg: "images/未命名設計 copy.png" },
+      { question: "文藻熊身上穿的服裝是？", answers: ["運動服","畢業袍","文藻制服","教職員服"], correct: 2, leftImg: "images/未命名設計.png", rightImg: "images/未命名設計 copy.png" },
+      { question: "文藻熊的義賣所得主要用於？", answers: ["建設校舍","助學基金","海外旅遊","活動獎金"], correct: 1, leftImg: "images/未命名設計.png", rightImg: "images/未命名設計 copy.png" }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById("question");
+    const scoreEl = document.getElementById("score");
+    const leftImage = document.getElementById("leftImage");
+    const rightImage = document.getElementById("rightImage");
+    const endButtons = document.getElementById("endButtons");
+    const restartBtn = document.getElementById("restartBtn");
+    const exitBtn = document.getElementById("exitBtn");
+
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const bgMusic = document.getElementById("bgMusic");
+
+    playBtn.addEventListener("click", () => bgMusic.play());
+    pauseBtn.addEventListener("click", () => bgMusic.pause());
+
+    const btns = [];
+    for (let i = 0; i < 4; i++) {
+      btns[i] = document.getElementById("btn" + i);
+      btns[i].addEventListener("click", () => checkAnswer(i));
+    }
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      questionEl.textContent = q.question;
+      leftImage.src = q.leftImg;
+      rightImage.src = q.rightImg;
+      for (let i = 0; i < 4; i++) btns[i].textContent = q.answers[i];
+    }
+
+    function checkAnswer(selected) {
+      const q = questions[currentQuestion];
+      if (selected === q.correct) score += 20;
+      scoreEl.textContent = "分數: " + score;
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+      } else {
+        questionEl.textContent = "遊戲結束！總分：" + score;
+        leftImage.style.display = "none";
+        rightImage.style.display = "none";
+        btns.forEach(b => b.style.display = "none");
+        endButtons.style.display = "flex";
+      }
+    }
+
+    restartBtn.addEventListener("click", () => {
+      currentQuestion = 0;
+      score = 0;
+      scoreEl.textContent = "分數: 0";
+      leftImage.style.display = "block";
+      rightImage.style.display = "block";
+      btns.forEach(b => b.style.display = "block");
+      endButtons.style.display = "none";
+      loadQuestion();
+    });
+
+    exitBtn.addEventListener("click", () => {
+      alert("感謝遊玩！");
+      window.close();
+    });
+
+    loadQuestion();
+  </script>
+</body>
+</html>
